@@ -247,6 +247,15 @@ public class FtpClient
         }
     }
 
+    public async Task FileDelete(string path)
+    {
+        byte[] buffer = UTF8Encoding.UTF8.GetBytes(path + char.MinValue);
+        MsgFunctionPropertyStateRes res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtpCommands.FileDelete, buffer, true);
+
+        if(res.Data[0] != 0x00)
+            throw new FtpException(res.Data[0]);
+    }
+
     public async Task<List<FtpPath>> List(string path)
     {
         List<FtpPath> list = new List<FtpPath>();
