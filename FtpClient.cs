@@ -44,10 +44,11 @@ public class FtpClient
         if(ProcessChanged == null) return;
 
         procPos += length;
-        int perc = (int)Math.Floor(procPos / (double)procSize);
+        int perc = (int)Math.Floor((procPos*100) / (double)procSize);
 
         double time = (DateTime.Now - procTime).TotalMilliseconds;
-        int speed = (int)Math.Floor(length / time / 1000);
+        procTime = DateTime.Now;
+        int speed = (int)Math.Floor(length / (time / 1000));
         procSpeed.Add(speed);
 
         if(procSpeed.Count > 5)
@@ -59,7 +60,7 @@ public class FtpClient
 
         x = (int)(x / procSpeed.Count);
 
-        int left = (int)Math.Floor((procSize - procPos) * (double)x);
+        int left = (int)Math.Floor((procSize - procPos) / (double)x);
 
         ProcessChanged?.Invoke(perc, x, left);
     }
@@ -100,10 +101,10 @@ public class FtpClient
             await FileUpload(path, stream, length);
     }
 
-    public async Task FileUpload(string path, string file, int length)
+    public async Task FileUpload(string local, string host, int length)
     {
-        using(FileStream stream = File.Open(file, FileMode.Open))
-            await FileUpload(path, stream, length);
+        using(FileStream stream = File.Open(local, FileMode.Open))
+            await FileUpload(host, stream, length);
     }
 
     public async Task FileUpload(string path, Stream stream, int length)
@@ -127,11 +128,15 @@ public class FtpClient
         int errorCount = 0;
         while(true)
         {
-            byte[] buffer = new byte[length - 5];
-            int readed = stream.Read(buffer, 0, length - 5);
+            byte[] buffer = new byte[length - 3];
+            int readed = stream.Read(buffer, 0, length - 3);
+
+            if(readed == 0)
+                break;
 
             data.Clear();
             data.AddRange(BitConverter.GetBytes(sequence));
+            data.Add((byte)readed);
             data.AddRange(buffer);
 
             try
@@ -164,12 +169,10 @@ public class FtpClient
             }
 
             sequence++;
-            HandleProcess(length - 5);
-
-            if(readed < length -5)
-                break;
-                
+            HandleProcess(readed);                
         }
+
+        await device.InvokeFunctionProperty(ObjectIndex, (byte)FtpCommands.FileUpload, new byte[] {0xFF, 0xFF}, true);
     }
 
     public async Task FileDownload(string path, byte[] file, int length)
@@ -180,7 +183,7 @@ public class FtpClient
 
     public async Task FileDownload(string path, string file, int length)
     {
-        using(FileStream stream = File.Open(file, FileMode.Open))
+        using(FileStream stream = File.Open(file, FileMode.OpenOrCreate))
             await FileDownload(path, stream, length);
     }
 
@@ -200,7 +203,7 @@ public class FtpClient
         if(res.Data[0] != 0x00)
             throw new FtpException(res.Data[0]);
 
-        procSize = Convert.ToUInt32(res.Data.Skip(1).Take(4));
+        procSize = BitConverter.ToInt32(res.Data.Skip(1).Take(4).ToArray(), 0);
 
         int errorCount = 0;
         while(true)
@@ -213,8 +216,8 @@ public class FtpClient
                     throw new FtpException(res.Data[0]);
 
                     
-                int crcreq = CRC16.Get(data.ToArray());
-                int crcresp = (res.Data[length - 1] << 8) | res.Data[length];
+                int crcreq = CRC16.Get(res.Data.Skip(1).Take(res.Data[3] + 3).ToArray());
+                int crcresp = (res.Data[res.Data.Count() - 2] << 8) | res.Data[res.Data.Count() -1];
 
                 if (crcreq != crcresp)
                     throw new Exception($"Falscher CRC (Req: {crcreq:X4} / Res: {crcresp:X4})");
@@ -229,17 +232,18 @@ public class FtpClient
 
                 OnError?.Invoke(ex.Message);
 
-                if(errorCount > 20)
+                if(errorCount > 3)
                     throw new Exception("To many errors");
 
                 continue;
             }
             
             sequence++;
-            stream.Write(res.Data, 3, res.Data.Length - 5);
-            HandleProcess(length - 5);
+            stream.Write(res.Data, 4, res.Data.Length - 6);
+            stream.Flush();
+            HandleProcess(length - 6); //TODO check length (6)
 
-            if(res.Data.Length - 5 < length)
+            if(res.Data.Length - 5 < length) //TODO check length (6)
             {
                 stream.Flush();
                 return;
