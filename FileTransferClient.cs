@@ -20,7 +20,8 @@ public class FileTransferClient
         FileDelete,
         DirList = 80,
         DirCreate,
-        DirDelete
+        DirDelete,
+        GetVersion = 100
     }
 
     public delegate void ProcessChangedHandler(int percent, int speed, int time);
@@ -32,6 +33,21 @@ public class FileTransferClient
 
     public FileTransferClient(BusDevice _device) => device = _device;
 
+
+    public static int GetVersionMajor()
+    {
+        return typeof(FileTransferClient).Assembly.GetName().Version.Major;
+    }
+
+    public static int GetVersionMinor()
+    {
+        return typeof(FileTransferClient).Assembly.GetName().Version.Minor;
+    }
+
+    public static int GetVersionBuild()
+    {
+        return typeof(FileTransferClient).Assembly.GetName().Version.Build;
+    }
 
 
     private long procSize = 0;
@@ -63,6 +79,20 @@ public class FileTransferClient
         int left = (int)Math.Floor((procSize - procPos) / (double)x);
 
         ProcessChanged?.Invoke(perc, x, left);
+    }
+
+    public async Task<string> CheckVersion()
+    {
+        MsgFunctionPropertyStateRes res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.GetVersion, null, true);
+        int major = BitConverter.ToInt16(new byte[] { res.Data[0], res.Data[1]});
+        int minor = BitConverter.ToInt16(new byte[] { res.Data[2], res.Data[3]});
+        int build = BitConverter.ToInt16(new byte[] { res.Data[4], res.Data[5]});
+        string result = $"{major}.{minor}.{build}";
+
+        if(major != GetVersionMajor())
+            throw new Exception("Incompatible Remote MajorVersion: " + result);
+
+        return result;
     }
 
     public async Task Format()

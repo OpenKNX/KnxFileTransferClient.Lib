@@ -8,6 +8,14 @@
     <TargetFramework>net7.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    
+    <Version>0.0.3.0</Version>
+    <AssemblyVersion>0.0.3.0</AssemblyVersion>
+    <Company>OpenKNX</Company>
+    <Authors>thewhobox</Authors>
+    <Product>KnxFileTransferClient.Lib</Product>
+    <Description />
+    <Copyright>Copyright © 2023</Copyright>
   </PropertyGroup>
 
 </Project>
