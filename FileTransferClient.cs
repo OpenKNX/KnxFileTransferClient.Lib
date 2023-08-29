@@ -21,6 +21,7 @@ public class FileTransferClient
         DirList = 80,
         DirCreate,
         DirDelete,
+        Cancel = 90,
         GetVersion = 100
     }
 
