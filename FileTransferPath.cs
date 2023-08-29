@@ -1,11 +1,11 @@
-namespace KnxFtpClient.Lib;
+namespace KnxFileTransferClient.Lib;
 
-public class FtpPath
+public class FileTransferPath
 {
     public string Name { get; set; }
     public bool IsFile { get; set; }
 
-    public FtpPath(string name, bool isFile)
+    public FileTransferPath(string name, bool isFile)
     {
         Name = name;
         IsFile = isFile;

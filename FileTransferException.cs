@@ -1,6 +1,6 @@
-namespace KnxFtpClient.Lib;
+namespace KnxFileTransferClient.Lib;
 
-public class FtpException : Exception
+public class FileTransferException : Exception
 {
     public int ErrorCode { get; }
     private static Dictionary<int, string> Messages = new Dictionary<int, string>() {
@@ -23,18 +23,18 @@ public class FtpException : Exception
         { 0x86, "Dir has no more files" }
     };
 
-    public FtpException(int code) : base(Messages[code])
+    public FileTransferException(int code) : base(Messages[code])
     {
         ErrorCode = code;
     }
 
-    public FtpException(string message, int code)
+    public FileTransferException(string message, int code)
         : base(message)
     {
         ErrorCode = code;
     }
 
-    public FtpException(string message, Exception inner, int code)
+    public FileTransferException(string message, Exception inner, int code)
         : base(message, inner)
     {
         ErrorCode = code;

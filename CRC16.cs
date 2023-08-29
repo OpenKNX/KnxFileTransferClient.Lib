@@ -1,4 +1,4 @@
-namespace KnxFtpClient.Lib;
+namespace KnxFileTransferClient.Lib;
 
 public class CRC16
 {

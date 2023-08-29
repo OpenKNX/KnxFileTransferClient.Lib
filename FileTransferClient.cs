@@ -2,15 +2,15 @@
 using Kaenx.Konnect.Classes;
 using Kaenx.Konnect.Messages.Response;
 
-namespace KnxFtpClient.Lib;
+namespace KnxFileTransferClient.Lib;
 
-public class FtpClient
+public class FileTransferClient
 {
     private BusDevice device;
     private const int ObjectIndex = 159;
 
 
-    public enum FtpCommands
+    public enum FtmCommands
     {
         Format,
         Exists,
@@ -30,7 +30,7 @@ public class FtpClient
     public event ErrorHandler? OnError;
 
 
-    public FtpClient(BusDevice _device) => device = _device;
+    public FileTransferClient(BusDevice _device) => device = _device;
 
 
 
@@ -67,21 +67,21 @@ public class FtpClient
 
     public async Task Format()
     {
-        MsgFunctionPropertyStateRes res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtpCommands.Format, null, true);
+        MsgFunctionPropertyStateRes res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.Format, null, true);
 
         if(res.Data[0] != 0x00)        
-            throw new FtpException(res.Data[0]);
+            throw new FileTransferException(res.Data[0]);
     }
 
     public async Task<bool> Exists(string path)
     {
         byte[] buffer = UTF8Encoding.UTF8.GetBytes(path + char.MinValue);
-        MsgFunctionPropertyStateRes res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtpCommands.Exists, buffer, true);
+        MsgFunctionPropertyStateRes res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.Exists, buffer, true);
 
         if(res.Data[0] == 0x00)
             return res.Data[1] == 0x01;
         
-        throw new FtpException(res.Data[0]);
+        throw new FileTransferException(res.Data[0]);
     }
 
     public async Task Rename(string path, string newpath)
@@ -89,10 +89,10 @@ public class FtpClient
         List<byte> data = new List<byte>();
         data.AddRange(UTF8Encoding.UTF8.GetBytes(path + char.MinValue));
         data.AddRange(UTF8Encoding.UTF8.GetBytes(newpath + char.MinValue));
-        MsgFunctionPropertyStateRes res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtpCommands.Rename, data.ToArray(), true);
+        MsgFunctionPropertyStateRes res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.Rename, data.ToArray(), true);
 
         if(res.Data[0] != 0x00)
-            throw new FtpException(res.Data[0]);
+            throw new FileTransferException(res.Data[0]);
     }
 
     public async Task FileUpload(string path, byte[] file, int length)
@@ -118,11 +118,11 @@ public class FtpClient
         data.AddRange(BitConverter.GetBytes(sequence));
         data.Add((byte)length);
         data.AddRange(UTF8Encoding.UTF8.GetBytes(path + char.MinValue));
-        MsgFunctionPropertyStateRes res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtpCommands.FileUpload, data.ToArray(), true);
+        MsgFunctionPropertyStateRes res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.FileUpload, data.ToArray(), true);
         sequence++;
 
         if(res.Data[0] != 0x00)
-            throw new FtpException(res.Data[0]);
+            throw new FileTransferException(res.Data[0]);
 
 
         int errorCount = 0;
@@ -141,10 +141,10 @@ public class FtpClient
 
             try
             {
-                res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtpCommands.FileUpload, data.ToArray(), true);
+                res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.FileUpload, data.ToArray(), true);
 
                 if(res.Data[0] != 0x00)
-                    throw new FtpException(res.Data[0]);
+                    throw new FileTransferException(res.Data[0]);
 
                 int crcreq = CRC16.Get(data.ToArray());
                 int crcresp = (res.Data[3] << 8) | res.Data[4];
@@ -152,7 +152,7 @@ public class FtpClient
                 if (crcreq != crcresp)
                     throw new Exception($"Falscher CRC (Req: {crcreq:X4} / Res: {crcresp:X4})");
             }
-            catch(FtpException ex)
+            catch(FileTransferException ex)
             {
                 throw ex;
             }
@@ -172,7 +172,7 @@ public class FtpClient
             HandleProcess(readed);                
         }
 
-        await device.InvokeFunctionProperty(ObjectIndex, (byte)FtpCommands.FileUpload, new byte[] {0xFF, 0xFF}, true);
+        await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.FileUpload, new byte[] {0xFF, 0xFF}, true);
     }
 
     public async Task FileDownload(string path, byte[] file, int length)
@@ -197,11 +197,11 @@ public class FtpClient
         data.AddRange(BitConverter.GetBytes(sequence));
         data.Add((byte)length);
         data.AddRange(UTF8Encoding.UTF8.GetBytes(path + char.MinValue));
-        MsgFunctionPropertyStateRes res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtpCommands.FileDownload, data.ToArray(), true);
+        MsgFunctionPropertyStateRes res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.FileDownload, data.ToArray(), true);
         sequence++;
 
         if(res.Data[0] != 0x00)
-            throw new FtpException(res.Data[0]);
+            throw new FileTransferException(res.Data[0]);
 
         procSize = BitConverter.ToInt32(res.Data.Skip(1).Take(4).ToArray(), 0);
 
@@ -210,10 +210,10 @@ public class FtpClient
         {
             try
             {
-                res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtpCommands.FileDownload, BitConverter.GetBytes(sequence), true);
+                res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.FileDownload, BitConverter.GetBytes(sequence), true);
             
                 if(res.Data[0] != 0x00)
-                    throw new FtpException(res.Data[0]);
+                    throw new FileTransferException(res.Data[0]);
 
                     
                 int crcreq = CRC16.Get(res.Data.Skip(1).Take(res.Data[3] + 3).ToArray());
@@ -222,7 +222,7 @@ public class FtpClient
                 if (crcreq != crcresp)
                     throw new Exception($"Falscher CRC (Req: {crcreq:X4} / Res: {crcresp:X4})");
             }
-            catch(FtpException ex)
+            catch(FileTransferException ex)
             {
                 throw ex;
             }
@@ -254,23 +254,23 @@ public class FtpClient
     public async Task FileDelete(string path)
     {
         byte[] buffer = UTF8Encoding.UTF8.GetBytes(path + char.MinValue);
-        MsgFunctionPropertyStateRes res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtpCommands.FileDelete, buffer, true);
+        MsgFunctionPropertyStateRes res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.FileDelete, buffer, true);
 
         if(res.Data[0] != 0x00)
-            throw new FtpException(res.Data[0]);
+            throw new FileTransferException(res.Data[0]);
     }
 
-    public async Task<List<FtpPath>> List(string path)
+    public async Task<List<FileTransferPath>> List(string path)
     {
-        List<FtpPath> list = new List<FtpPath>();
+        List<FileTransferPath> list = new List<FileTransferPath>();
         byte[] data = ASCIIEncoding.ASCII.GetBytes(path + char.MinValue);
-        MsgFunctionPropertyStateRes res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtpCommands.DirList, data, true);
+        MsgFunctionPropertyStateRes res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.DirList, data, true);
 
         bool hasData = true;
         while(hasData)
         {
             if(res.Data[0] != 0x00)
-                throw new FtpException(res.Data[0]);
+                throw new FileTransferException(res.Data[0]);
 
             string name = ASCIIEncoding.ASCII.GetString(res.Data.Skip(2).ToArray());
 
@@ -281,16 +281,16 @@ public class FtpClient
                     break;
                     
                 case 0x01:
-                    list.Add(new FtpPath(name, true));
+                    list.Add(new FileTransferPath(name, true));
                     break;
                     
                 case 0x02:
-                    list.Add(new FtpPath(name, false));
+                    list.Add(new FileTransferPath(name, false));
                     break;
             }
 
             if(hasData)
-                res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtpCommands.DirList, null, true);
+                res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.DirList, null, true);
         }
 
         return list;
@@ -299,18 +299,18 @@ public class FtpClient
     public async Task DirCreate(string path)
     {
         byte[] buffer = UTF8Encoding.UTF8.GetBytes(path + char.MinValue);
-        MsgFunctionPropertyStateRes res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtpCommands.DirCreate, buffer, true);
+        MsgFunctionPropertyStateRes res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.DirCreate, buffer, true);
 
         if(res.Data[0] != 0x00)
-            throw new FtpException(res.Data[0]);
+            throw new FileTransferException(res.Data[0]);
     }
 
     public async Task DirDelete(string path)
     {
         byte[] buffer = UTF8Encoding.UTF8.GetBytes(path + char.MinValue);
-        MsgFunctionPropertyStateRes res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtpCommands.DirDelete, buffer, true);
+        MsgFunctionPropertyStateRes res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.DirDelete, buffer, true);
 
         if(res.Data[0] != 0x00)
-            throw new FtpException(res.Data[0]);
+            throw new FileTransferException(res.Data[0]);
     }
 }
