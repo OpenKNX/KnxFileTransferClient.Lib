@@ -85,9 +85,9 @@ public class FileTransferClient
     public async Task<string> CheckVersion()
     {
         MsgFunctionPropertyStateRes res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.GetVersion, null, true);
-        int major = BitConverter.ToInt16(new byte[] { res.Data[0], res.Data[1]});
-        int minor = BitConverter.ToInt16(new byte[] { res.Data[2], res.Data[3]});
-        int build = BitConverter.ToInt16(new byte[] { res.Data[4], res.Data[5]});
+        int major = BitConverter.ToInt16(new byte[] { res.Data[1], res.Data[0]});
+        int minor = BitConverter.ToInt16(new byte[] { res.Data[3], res.Data[2]});
+        int build = BitConverter.ToInt16(new byte[] { res.Data[5], res.Data[4]});
         string result = $"{major}.{minor}.{build}";
 
         if(major != GetVersionMajor())
