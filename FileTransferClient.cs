@@ -272,9 +272,9 @@ public class FileTransferClient
             sequence++;
             stream.Write(res.Data, 4, res.Data.Length - 6);
             stream.Flush();
-            HandleProcess(length - 6); //TODO check length (6)
+            HandleProcess(length - 6);
 
-            if(res.Data.Length - 5 < length) //TODO check length (6)
+            if(res.Data.Length - 6 < length)
             {
                 stream.Flush();
                 return;
