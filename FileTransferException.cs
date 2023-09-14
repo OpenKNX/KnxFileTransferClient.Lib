@@ -7,6 +7,7 @@ public class FileTransferException : Exception
         { 0x01, "LittleFS.begin() failed" },
         { 0x02, "LittleFS.format() failed" },
         { 0x03, "LittleFS not initialized" },
+        { 0x04, "Parameter pkg is greater than the allowed resultLength from Device" },
         //reserve
         { 0x41, "File already open" },
         { 0x42, "File can't be opened" },
