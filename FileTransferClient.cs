@@ -274,7 +274,7 @@ public class FileTransferClient
             stream.Flush();
             HandleProcess(length - 6);
 
-            if(res.Data.Length - 6 < length)
+            if(res.Data.Length < length)
             {
                 stream.Flush();
                 return;
