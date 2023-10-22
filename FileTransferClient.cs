@@ -28,7 +28,7 @@ public class FileTransferClient
     public delegate void ProcessChangedHandler(int percent, int speed, int time);
     public event ProcessChangedHandler? ProcessChanged;
 
-    public delegate void ErrorHandler(string message);
+    public delegate void ErrorHandler(Exception exception);
     public event ErrorHandler? OnError;
 
 
@@ -58,8 +58,6 @@ public class FileTransferClient
 
     private void HandleProcess(int length)
     {
-        if(ProcessChanged == null) return;
-
         procPos += length;
         int perc = (int)Math.Floor((procPos*100) / (double)procSize);
 
@@ -156,19 +154,24 @@ public class FileTransferClient
             throw new FileTransferException(res.Data[0]);
 
 
+        int readed = 0;
         int errorCount = 0;
         while(true)
         {
-            byte[] buffer = new byte[length - 3];
-            int readed = stream.Read(buffer, 0, length - 3);
+            if(errorCount == 0)
+            {
+                byte[] buffer = new byte[length - 3];
+                readed = stream.Read(buffer, 0, length - 3);
 
-            if(readed == 0)
-                break;
+                if(readed == 0)
+                    break;
+                    
+                data.Clear();
+                data.AddRange(BitConverter.GetBytes(sequence));
+                data.Add((byte)readed);
+                data.AddRange(buffer);
+            }
 
-            data.Clear();
-            data.AddRange(BitConverter.GetBytes(sequence));
-            data.Add((byte)readed);
-            data.AddRange(buffer);
 
             try
             {
@@ -191,14 +194,15 @@ public class FileTransferClient
             {
                 errorCount++;
 
-                OnError?.Invoke(ex.Message);
+                OnError?.Invoke(ex);
 
-                if(errorCount > 20)
+                if(errorCount > 3)
                     throw new Exception("To many errors");
 
                 continue;
             }
 
+            errorCount = 0;
             sequence++;
             HandleProcess(readed);                
         }
@@ -261,7 +265,7 @@ public class FileTransferClient
             {
                 errorCount++;
 
-                OnError?.Invoke(ex.Message);
+                OnError?.Invoke(ex);
 
                 if(errorCount > 3)
                     throw new Exception("To many errors");
