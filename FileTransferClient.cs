@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Diagnostics;
+using System.Text;
 using Kaenx.Konnect.Classes;
 using Kaenx.Konnect.Messages.Response;
 
@@ -27,6 +28,9 @@ public class FileTransferClient
 
     public delegate void ProcessChangedHandler(int percent, int speed, int time);
     public event ProcessChangedHandler? ProcessChanged;
+
+    public delegate void PrintInfoHandler(string info);
+    public event PrintInfoHandler? PrintInfo;
 
     public delegate void ErrorHandler(Exception exception);
     public event ErrorHandler? OnError;
@@ -66,7 +70,7 @@ public class FileTransferClient
         int speed = (int)Math.Floor(length / (time / 1000));
         procSpeed.Add(speed);
 
-        if(procSpeed.Count > 5)
+        if(procSpeed.Count > 20)
             procSpeed.RemoveAt(0);
 
         int x = 0;
@@ -138,6 +142,8 @@ public class FileTransferClient
 
     public async Task FileUpload(string path, Stream stream, int length)
     {
+        Stopwatch sw = new Stopwatch();
+        sw.Start();
         procSpeed.Clear();
         procSize = stream.Length;
         procPos = 0;
@@ -208,6 +214,9 @@ public class FileTransferClient
         }
 
         await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.FileUpload, new byte[] {0xFF, 0xFF}, true);
+        sw.Stop();
+        int xspeed = (int)(stream.Length / sw.Elapsed.TotalSeconds);
+        PrintInfo?.Invoke($"Abgeschlossen in {sw.Elapsed.Minutes}:{sw.Elapsed.Seconds:D2} ({xspeed:D3} bytes/s)");
     }
 
     public async Task FileDownload(string path, byte[] file, int length)
@@ -224,6 +233,8 @@ public class FileTransferClient
 
     public async Task FileDownload(string path, Stream stream, int length)
     {
+        Stopwatch sw = new Stopwatch();
+        sw.Start();
         procSpeed.Clear();
         procPos = 0;
         procTime = DateTime.Now;
@@ -281,9 +292,12 @@ public class FileTransferClient
             if(res.Data.Length < length)
             {
                 stream.Flush();
-                return;
+                break;
             }
         }
+        sw.Stop();
+        int xspeed = (int)(stream.Length / sw.Elapsed.TotalSeconds);
+        PrintInfo?.Invoke($"Abgeschlossen in {sw.Elapsed.Minutes}:{sw.Elapsed.Seconds:D2} ({xspeed:D3} bytes/s)");
     }
 
     public async Task FileDelete(string path)
