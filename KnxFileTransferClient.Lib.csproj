@@ -5,6 +5,16 @@
   </ItemGroup>
 
   <PropertyGroup>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+    <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
+    <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
+    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
+    <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
+
     <TargetFramework>net7.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
@@ -17,5 +27,17 @@
     <Description />
     <Copyright>Copyright © 2023</Copyright>
   </PropertyGroup>
+
+   <!-- Define custom attributes for the library -->
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadata">
+      <_Parameter1>LibVersion</_Parameter1>
+      <_Parameter2>0.1.0.0</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadata">
+      <_Parameter1>LibName</_Parameter1>
+      <_Parameter2>KnxFileTransferClient.Lib</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
 
 </Project>
