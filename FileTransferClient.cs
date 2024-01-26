@@ -10,7 +10,6 @@ public class FileTransferClient
     private BusDevice device;
     private const int ObjectIndex = 159;
 
-
     public enum FtmCommands
     {
         Format,
@@ -35,9 +34,7 @@ public class FileTransferClient
     public delegate void ErrorHandler(Exception exception);
     public event ErrorHandler? OnError;
 
-
     public FileTransferClient(BusDevice _device) => device = _device;
-
 
     public static int GetVersionMajor()
     {
@@ -53,7 +50,6 @@ public class FileTransferClient
     {
         return typeof(FileTransferClient).Assembly.GetName().Version.Build;
     }
-
 
     private long procSize = 0;
     private long procPos = 0;
@@ -178,7 +174,6 @@ public class FileTransferClient
                 data.AddRange(buffer);
             }
 
-
             try
             {
                 res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.FileUpload, data.ToArray(), true);
@@ -260,8 +255,7 @@ public class FileTransferClient
             
                 if(res.Data[0] != 0x00)
                     throw new FileTransferException(res.Data[0]);
-
-                    
+       
                 int crcreq = CRC16.Get(res.Data.Skip(1).Take(res.Data[3] + 3).ToArray());
                 int crcresp = (res.Data[res.Data.Count() - 2] << 8) | res.Data[res.Data.Count() -1];
 
