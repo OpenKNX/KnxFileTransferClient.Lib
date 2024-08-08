@@ -105,6 +105,9 @@ public class FileTransferClient
     public async Task<bool> Exists(string path)
     {
         byte[] buffer = UTF8Encoding.UTF8.GetBytes(path + char.MinValue);
+        if(device.MaxFrameLength < buffer.Length + 2)
+            throw new Exception($"The Path is to long ({buffer.Length + 2}) for the MaxAPDU of {device.MaxFrameLength}");
+
         MsgFunctionPropertyStateRes res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.Exists, buffer, true);
 
         if(res.Data[0] == 0x00)
@@ -118,6 +121,9 @@ public class FileTransferClient
         List<byte> data = new List<byte>();
         data.AddRange(UTF8Encoding.UTF8.GetBytes(path + char.MinValue));
         data.AddRange(UTF8Encoding.UTF8.GetBytes(newpath + char.MinValue));
+        if(device.MaxFrameLength < data.Count + 2)
+            throw new Exception($"Both Paths are to long ({data.Count + 2}) for the MaxAPDU of {device.MaxFrameLength}");
+
         MsgFunctionPropertyStateRes res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.Rename, data.ToArray(), true);
 
         if(res.Data[0] != 0x00)
@@ -149,6 +155,10 @@ public class FileTransferClient
         data.AddRange(BitConverter.GetBytes(sequence));
         data.Add((byte)length);
         data.AddRange(UTF8Encoding.UTF8.GetBytes(path + char.MinValue));
+
+        if(device.MaxFrameLength < data.Count + 2)
+            throw new Exception($"The Path is to long ({data.Count + 2}) for the MaxAPDU of {device.MaxFrameLength}");
+
         MsgFunctionPropertyStateRes res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.FileUpload, data.ToArray(), true);
         sequence++;
 
@@ -238,6 +248,10 @@ public class FileTransferClient
         data.AddRange(BitConverter.GetBytes(sequence));
         data.Add((byte)length);
         data.AddRange(UTF8Encoding.UTF8.GetBytes(path + char.MinValue));
+        
+        if(device.MaxFrameLength < data.Count + 2)
+            throw new Exception($"The Path is to long ({data.Count + 2}) for the MaxAPDU of {device.MaxFrameLength}");
+
         MsgFunctionPropertyStateRes res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.FileDownload, data.ToArray(), true);
         sequence++;
 
@@ -307,6 +321,10 @@ public class FileTransferClient
     {
         List<FileTransferPath> list = new List<FileTransferPath>();
         byte[] data = ASCIIEncoding.ASCII.GetBytes(path + char.MinValue);
+        
+        if(device.MaxFrameLength < data.Length + 2)
+            throw new Exception($"The Path is to long ({data.Length + 2}) for the MaxAPDU of {device.MaxFrameLength}");
+
         MsgFunctionPropertyStateRes res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.DirList, data, true);
 
         bool hasData = true;
@@ -342,6 +360,9 @@ public class FileTransferClient
     public async Task DirCreate(string path)
     {
         byte[] buffer = UTF8Encoding.UTF8.GetBytes(path + char.MinValue);
+        if(device.MaxFrameLength < buffer.Length + 2)
+            throw new Exception($"The Path is to long ({buffer.Length + 2}) for the MaxAPDU of {device.MaxFrameLength}");
+
         MsgFunctionPropertyStateRes res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.DirCreate, buffer, true);
 
         if(res.Data[0] != 0x00)
@@ -351,6 +372,9 @@ public class FileTransferClient
     public async Task DirDelete(string path)
     {
         byte[] buffer = UTF8Encoding.UTF8.GetBytes(path + char.MinValue);
+        if(device.MaxFrameLength < buffer.Length + 2)
+            throw new Exception($"The Path is to long ({buffer.Length + 2}) for the MaxAPDU of {device.MaxFrameLength}");
+
         MsgFunctionPropertyStateRes res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.DirDelete, buffer, true);
 
         if(res.Data[0] != 0x00)
