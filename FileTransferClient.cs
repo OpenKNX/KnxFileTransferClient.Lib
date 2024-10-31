@@ -130,19 +130,38 @@ public class FileTransferClient
             throw new FileTransferException(res.Data[0]);
     }
 
-    public async Task FileUpload(string path, byte[] file, int length)
+    public async Task FileUpload(string path, byte[] file, int length, short start_sequence)
     {
         using(MemoryStream stream = new MemoryStream(file))
-            await FileUpload(path, stream, length);
+            await FileUpload(path, stream, length, start_sequence);
     }
 
-    public async Task FileUpload(string local, string host, int length)
+    public async Task FileUpload(string local, string host, int length, short start_sequence)
     {
         using(FileStream stream = File.Open(local, FileMode.Open))
-            await FileUpload(host, stream, length);
+            await FileUpload(host, stream, length, start_sequence);
     }
 
-    public async Task FileUpload(string path, Stream stream, int length)
+    public async Task<FileInfo> FileInfo(string path)
+    {
+        byte[] buffer = UTF8Encoding.UTF8.GetBytes(path + char.MinValue);
+        if(device.MaxFrameLength < buffer.Length + 2)
+            throw new Exception($"The Path is to long ({buffer.Length + 2}) for the MaxAPDU of {device.MaxFrameLength}");
+
+        MsgFunctionPropertyStateRes res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.Exists, buffer, true);
+
+        if(res.Data[0] == 0x00)
+        {
+            int size = BitConverter.ToInt32(res.Data.Skip(1).Take(4).ToArray(), 0);
+            FileInfo info = new FileInfo(size, res.Data.Skip(5).Take(4).ToArray());
+            PrintInfo?.Invoke($"File: {path} - Size: {size} bytes - CRC16: {info.GetCrc()}");
+            return info;
+        }
+        else
+            throw new FileTransferException(res.Data[0]);
+    }
+
+    public async Task FileUpload(string path, Stream stream, int length, short start_sequence)
     {
         Stopwatch sw = new Stopwatch();
         sw.Start();
@@ -160,6 +179,7 @@ public class FileTransferClient
             throw new Exception($"The Path is to long ({data.Count + 2}) for the MaxAPDU of {device.MaxFrameLength}");
 
         MsgFunctionPropertyStateRes res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.FileUpload, data.ToArray(), true);
+        sequence = start_sequence;
         sequence++;
 
         if(res.Data[0] != 0x00)

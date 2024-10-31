@@ -39,5 +39,8 @@
       <_Parameter2>KnxFileTransferClient.Lib</_Parameter2>
     </AssemblyAttribute>
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="System.IO.Hashing" Version="8.0.0" />
+  </ItemGroup>
 
 </Project>
