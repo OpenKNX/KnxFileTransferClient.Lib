@@ -18,6 +18,7 @@ public class FileTransferClient
         FileUpload = 40,
         FileDownload,
         FileDelete,
+        FileInfo,
         DirList = 80,
         DirCreate,
         DirDelete,
@@ -148,7 +149,7 @@ public class FileTransferClient
         if(device.MaxFrameLength < buffer.Length + 2)
             throw new Exception($"The Path is to long ({buffer.Length + 2}) for the MaxAPDU of {device.MaxFrameLength}");
 
-        MsgFunctionPropertyStateRes res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.Exists, buffer, true);
+        MsgFunctionPropertyStateRes res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.FileInfo, buffer, true);
 
         if(res.Data[0] == 0x00)
         {
