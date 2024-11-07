@@ -152,7 +152,7 @@ public class FileTransferClient
 
         if(res.Data[0] == 0x00)
         {
-            int size = BitConverter.ToInt32(res.Data.Skip(1).Take(4).ToArray(), 0);
+            int size = BitConverter.ToInt32(res.Data.Skip(1).Take(4).Reverse().ToArray(), 0);
             FileInfo info = new FileInfo(size, res.Data.Skip(5).Take(4).ToArray());
             PrintInfo?.Invoke($"File: {path} - Size: {size} bytes - CRC16: {info.GetCrc()}");
             return info;
