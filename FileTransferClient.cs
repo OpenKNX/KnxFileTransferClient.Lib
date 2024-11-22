@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Text;
 using Kaenx.Konnect.Classes;
+using Kaenx.Konnect.Exceptions;
 using Kaenx.Konnect.Messages.Response;
 
 namespace KnxFileTransferClient.Lib;
@@ -221,6 +222,16 @@ public class FileTransferClient
             catch(FileTransferException ex)
             {
                 throw ex;
+            }
+            catch(DeviceNotConnectedException ex)
+            {
+                errorCount++;
+                OnError?.Invoke(ex);
+                if(errorCount > 3)
+                    throw new Exception("To many errors");
+                    
+                await device.Connect();
+                continue;
             }
             catch(Exception ex) 
             {
