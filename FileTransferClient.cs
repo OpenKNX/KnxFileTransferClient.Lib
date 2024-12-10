@@ -40,17 +40,17 @@ public class FileTransferClient
 
     public static int GetVersionMajor()
     {
-        return typeof(FileTransferClient).Assembly.GetName().Version.Major;
+        return typeof(FileTransferClient).Assembly.GetName().Version?.Major ?? -1;
     }
 
     public static int GetVersionMinor()
     {
-        return typeof(FileTransferClient).Assembly.GetName().Version.Minor;
+        return typeof(FileTransferClient).Assembly.GetName().Version?.Minor ?? -1;
     }
 
     public static int GetVersionBuild()
     {
-        return typeof(FileTransferClient).Assembly.GetName().Version.Build;
+        return typeof(FileTransferClient).Assembly.GetName().Version?.Build ?? -1;
     }
 
     private long procSize = 0;
@@ -84,7 +84,9 @@ public class FileTransferClient
 
     public async Task<string> CheckVersion()
     {
-        MsgFunctionPropertyStateRes res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.GetVersion, null, true);
+        MsgFunctionPropertyStateRes? res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.GetVersion, null, true);
+        if(res == null)
+            throw new Exception("No response for Version Request");
         int major = BitConverter.ToInt16(new byte[] { res.Data[1], res.Data[0]});
         int minor = BitConverter.ToInt16(new byte[] { res.Data[3], res.Data[2]});
         int build = BitConverter.ToInt16(new byte[] { res.Data[5], res.Data[4]});
@@ -98,7 +100,9 @@ public class FileTransferClient
 
     public async Task Format()
     {
-        MsgFunctionPropertyStateRes res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.Format, null, true);
+        MsgFunctionPropertyStateRes? res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.Format, null, true);
+        if(res == null)
+            throw new Exception("No response for Format Request");
 
         if(res.Data[0] != 0x00)        
             throw new FileTransferException(res.Data[0]);
@@ -110,7 +114,9 @@ public class FileTransferClient
         if(device.MaxFrameLength < buffer.Length + 2)
             throw new Exception($"The Path is to long ({buffer.Length + 2}) for the MaxAPDU of {device.MaxFrameLength}");
 
-        MsgFunctionPropertyStateRes res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.Exists, buffer, true);
+        MsgFunctionPropertyStateRes? res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.Exists, buffer, true);
+        if(res == null)
+            throw new Exception("No response for Exists Request");
 
         if(res.Data[0] == 0x00)
             return res.Data[1] == 0x01;
@@ -126,7 +132,9 @@ public class FileTransferClient
         if(device.MaxFrameLength < data.Count + 2)
             throw new Exception($"Both Paths are to long ({data.Count + 2}) for the MaxAPDU of {device.MaxFrameLength}");
 
-        MsgFunctionPropertyStateRes res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.Rename, data.ToArray(), true);
+        MsgFunctionPropertyStateRes? res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.Rename, data.ToArray(), true);
+        if(res == null)
+            throw new Exception("No response for Rename Request");
 
         if(res.Data[0] != 0x00)
             throw new FileTransferException(res.Data[0]);
@@ -150,7 +158,9 @@ public class FileTransferClient
         if(device.MaxFrameLength < buffer.Length + 2)
             throw new Exception($"The Path is to long ({buffer.Length + 2}) for the MaxAPDU of {device.MaxFrameLength}");
 
-        MsgFunctionPropertyStateRes res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.FileInfo, buffer, true);
+        MsgFunctionPropertyStateRes? res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.FileInfo, buffer, true);
+        if(res == null)
+            throw new Exception("No response for FileInfo Request");
 
         if(res.Data[0] == 0x00)
         {
@@ -180,7 +190,10 @@ public class FileTransferClient
         if(device.MaxFrameLength < data.Count + 2)
             throw new Exception($"The Path is to long ({data.Count + 2}) for the MaxAPDU of {device.MaxFrameLength}");
 
-        MsgFunctionPropertyStateRes res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.FileUpload, data.ToArray(), true);
+        MsgFunctionPropertyStateRes? res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.FileUpload, data.ToArray(), true);
+        if(res == null)
+            throw new Exception("No response for FileUpload Request");
+
         sequence = start_sequence;
         sequence++;
 
@@ -209,6 +222,8 @@ public class FileTransferClient
             try
             {
                 res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.FileUpload, data.ToArray(), true);
+                if(res == null)
+                    throw new Exception("No response for FileUpload Request");
 
                 if(res.Data[0] != 0x00)
                     throw new FileTransferException(res.Data[0]);
@@ -250,6 +265,7 @@ public class FileTransferClient
             HandleProcess(readed);                
         }
 
+        // TODO should we really wait for data?
         await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.FileUpload, new byte[] {0xFF, 0xFF}, true);
         sw.Stop();
         int xspeed = (int)(stream.Length / sw.Elapsed.TotalSeconds);
@@ -284,7 +300,9 @@ public class FileTransferClient
         if(device.MaxFrameLength < data.Count + 2)
             throw new Exception($"The Path is to long ({data.Count + 2}) for the MaxAPDU of {device.MaxFrameLength}");
 
-        MsgFunctionPropertyStateRes res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.FileDownload, data.ToArray(), true);
+        MsgFunctionPropertyStateRes? res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.FileDownload, data.ToArray(), true);
+        if(res == null)
+            throw new Exception("No response for FileDownload Request");
         sequence++;
 
         if(res.Data[0] != 0x00)
@@ -298,6 +316,8 @@ public class FileTransferClient
             try
             {
                 res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.FileDownload, BitConverter.GetBytes(sequence), true);
+                if(res == null)
+                    throw new Exception("No response for FileDownload Request");
             
                 if(res.Data[0] != 0x00)
                     throw new FileTransferException(res.Data[0]);
@@ -343,7 +363,9 @@ public class FileTransferClient
     public async Task FileDelete(string path)
     {
         byte[] buffer = UTF8Encoding.UTF8.GetBytes(path + char.MinValue);
-        MsgFunctionPropertyStateRes res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.FileDelete, buffer, true);
+        MsgFunctionPropertyStateRes? res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.FileDelete, buffer, true);
+        if(res == null)
+            throw new Exception("No response for FileDelete Request");
 
         if(res.Data[0] != 0x00)
             throw new FileTransferException(res.Data[0]);
@@ -357,7 +379,9 @@ public class FileTransferClient
         if(device.MaxFrameLength < data.Length + 2)
             throw new Exception($"The Path is to long ({data.Length + 2}) for the MaxAPDU of {device.MaxFrameLength}");
 
-        MsgFunctionPropertyStateRes res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.DirList, data, true);
+        MsgFunctionPropertyStateRes? res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.DirList, data, true);
+        if(res == null)
+            throw new Exception("No response for List Request");
 
         bool hasData = true;
         while(hasData)
@@ -383,7 +407,11 @@ public class FileTransferClient
             }
 
             if(hasData)
+            {
                 res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.DirList, null, true);
+                if(res == null)
+                    throw new Exception("No response for List Request");
+            }
         }
 
         return list;
@@ -395,7 +423,9 @@ public class FileTransferClient
         if(device.MaxFrameLength < buffer.Length + 2)
             throw new Exception($"The Path is to long ({buffer.Length + 2}) for the MaxAPDU of {device.MaxFrameLength}");
 
-        MsgFunctionPropertyStateRes res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.DirCreate, buffer, true);
+        MsgFunctionPropertyStateRes? res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.DirCreate, buffer, true);
+        if(res == null)
+            throw new Exception("No response for DirCreate Request");
 
         if(res.Data[0] != 0x00)
             throw new FileTransferException(res.Data[0]);
@@ -407,7 +437,9 @@ public class FileTransferClient
         if(device.MaxFrameLength < buffer.Length + 2)
             throw new Exception($"The Path is to long ({buffer.Length + 2}) for the MaxAPDU of {device.MaxFrameLength}");
 
-        MsgFunctionPropertyStateRes res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.DirDelete, buffer, true);
+        MsgFunctionPropertyStateRes? res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.DirDelete, buffer, true);
+        if(res == null)
+            throw new Exception("No response for DirDelete Request");
 
         if(res.Data[0] != 0x00)
             throw new FileTransferException(res.Data[0]);
