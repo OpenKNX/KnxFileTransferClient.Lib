@@ -330,7 +330,7 @@ public class FileTransferClient
             }
             catch(FileTransferException ex)
             {
-                throw ex;
+                throw new FileTransferException(ex.Message, ex, ex.ErrorCode);
             }
             catch(Exception ex)
             {
