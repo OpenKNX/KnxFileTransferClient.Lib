@@ -24,7 +24,15 @@ public class FileTransferClient
         DirCreate,
         DirDelete,
         Cancel = 90,
-        GetVersion = 100
+        GetVersion = 100,
+        FwUpdate,
+        CheckFeatures
+    }
+
+    public enum FtmFeatures
+    {
+        Resume = 1,
+        FirmwareUpdate = 2
     }
 
     public delegate void ProcessChangedHandler(int percent, int speed, int time);
@@ -80,6 +88,18 @@ public class FileTransferClient
         int left = (int)Math.Floor((procSize - procPos) / (double)x);
 
         ProcessChanged?.Invoke(perc, x, left);
+    }
+
+    public async Task<bool> CheckFeature(FtmFeatures feature)
+    {
+        try
+        {
+            MsgFunctionPropertyStateRes? res = await device.InvokeFunctionProperty(ObjectIndex, (byte)FtmCommands.CheckFeatures, null, true);
+            return res != null && (res.Data[0] & (byte)feature) != 0;
+        } catch {
+            // No response means no feature
+            return false;
+        }
     }
 
     public async Task<string> CheckVersion()
@@ -177,14 +197,22 @@ public class FileTransferClient
     {
         Stopwatch sw = new Stopwatch();
         sw.Start();
+
         procSpeed.Clear();
         procSize = stream.Length;
         procPos = 0;
         procTime = DateTime.Now;
         short sequence = 0;
+
+        bool canResume = await CheckFeature(FileTransferClient.FtmFeatures.Resume);
+
         List<byte> data = new List<byte>();
         data.AddRange(BitConverter.GetBytes(sequence));
         data.Add((byte)length);
+        if(canResume)
+        {
+            data.Add((byte)(start_sequence != 1 ? 1 : 0));
+        }
         data.AddRange(UTF8Encoding.UTF8.GetBytes(path + char.MinValue));
 
         if(device.MaxFrameLength < data.Count + 2)
@@ -195,7 +223,11 @@ public class FileTransferClient
             throw new Exception("No response for FileUpload Request");
 
         sequence = start_sequence;
-        sequence++;
+
+        if(sequence != 1)
+        {
+            stream.Seek((sequence - 1) * (length - 3), SeekOrigin.Begin);
+        }
 
         if(res.Data[0] != 0x00)
             throw new FileTransferException(res.Data[0]);
