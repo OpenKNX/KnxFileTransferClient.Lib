@@ -204,6 +204,11 @@ public class FileTransferClient
         procTime = DateTime.Now;
         short sequence = 0;
 
+        int maxCounter = (int)Math.Ceiling((double)stream.Length / (length - 3));
+        int minNeeded = (int)Math.Ceiling((double)stream.Length / 0xFFFF);
+        if(maxCounter > 0xFFFF)
+            throw new Exception($"File can not be transfered with the given pkg size (min {minNeeded + 3}; is {length})");
+
         bool canResume = await CheckFeature(FileTransferClient.FtmFeatures.Resume);
 
         List<byte> data = new List<byte>();
@@ -227,6 +232,7 @@ public class FileTransferClient
         if(sequence != 1)
         {
             stream.Seek((sequence - 1) * (length - 3), SeekOrigin.Begin);
+            procPos = (sequence - 1) * (length - 3);
         }
 
         if(res.Data[0] != 0x00)
