@@ -274,7 +274,7 @@ public class FileTransferClient
             }
             catch(FileTransferException ex)
             {
-                throw new Exception("FileTransferException",ex);
+                throw new Exception(ex.Message, ex);
             }
             catch(DeviceNotConnectedException ex)
             {
