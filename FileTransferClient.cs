@@ -207,6 +207,7 @@ public class FileTransferClient
         short sequence = 0;
 
         int payloadSize = length - packageOverhead;
+        Console.WriteLine($"overhead: {packageOverhead}, payload: {payloadSize}");
 
         int maxCounter = (int)Math.Ceiling((double)stream.Length / payloadSize);
         int minNeeded = (int)Math.Ceiling((double)stream.Length / 0xFFFF);
@@ -218,7 +219,7 @@ public class FileTransferClient
 
         List<byte> data = new List<byte>();
         data.AddRange(BitConverter.GetBytes(sequence));
-        if (version <= new SemanticVersion(0, 1, 3))
+        if (version <= new SemanticVersion(0, 1, 4))
             data.Add((byte)(length - 3));
         else
             data.Add((byte)(length - packageOverhead));
