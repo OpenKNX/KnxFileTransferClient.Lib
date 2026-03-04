@@ -207,7 +207,7 @@ public class FileTransferClient
         short sequence = 0;
 
         int payloadSize = length - packageOverhead;
-        Console.WriteLine($"overhead: {packageOverhead}, payload: {payloadSize}");
+        //Console.WriteLine($"overhead: {packageOverhead}, payload: {payloadSize}");
 
         int maxCounter = (int)Math.Ceiling((double)stream.Length / payloadSize);
         int minNeeded = (int)Math.Ceiling((double)stream.Length / 0xFFFF);
