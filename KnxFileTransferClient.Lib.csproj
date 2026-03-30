@@ -12,7 +12,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     
-    <AssemblyVersion>0.1.7.0</AssemblyVersion>
+    <AssemblyVersion>0.1.7.1</AssemblyVersion>
     <Company>OpenKNX</Company>
     <Authors>thewhobox</Authors>
     <Product>KnxFileTransferClient.Lib</Product>
