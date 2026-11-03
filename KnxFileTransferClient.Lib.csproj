@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Kaenx-Konnect\Kaenx.Konnect.csproj" />
+    <Compile Remove="tests\UploadResponseRegression\**\*.cs" />
   </ItemGroup>
 
   <PropertyGroup>
