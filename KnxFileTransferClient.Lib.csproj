@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Kaenx-Konnect\Kaenx.Konnect.csproj" />
+    <Compile Remove="tests\UploadResponseRegression\**\*.cs" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -25,4 +26,5 @@
     <PackageReference Include="System.Management.Automation" Version="7.5.0" />
   </ItemGroup>
 
+  <ItemGroup><Compile Remove="tests\UploadPacingRegression\**\*.cs" /></ItemGroup>
 </Project>

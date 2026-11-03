@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Text;
 using System.Management.Automation;
 using Kaenx.Konnect.Classes;
@@ -11,6 +11,7 @@ namespace KnxFileTransferClient.Lib;
 public class FileTransferClient
 {
     private BusDevice device;
+    private readonly int uploadDelayMilliseconds;
     private const int ObjectIndex = 159;
     private const int packageOverhead = 6;
 
@@ -47,7 +48,14 @@ public class FileTransferClient
     public delegate void ErrorHandler(Exception exception);
     public event ErrorHandler? OnError;
 
-    public FileTransferClient(BusDevice _device) => device = _device;
+    public FileTransferClient(BusDevice _device) : this(_device, 0) { }
+
+    public FileTransferClient(BusDevice _device, int uploadDelayMilliseconds)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(uploadDelayMilliseconds);
+        device = _device;
+        this.uploadDelayMilliseconds = uploadDelayMilliseconds;
+    }
 
     public static int GetVersionMajor()
     {
@@ -350,7 +358,9 @@ public class FileTransferClient
 
             errorCount = 0;
             sequence++;
-            HandleProcess(readed);                
+            HandleProcess(readed);
+            if (uploadDelayMilliseconds > 0)
+                await Task.Delay(uploadDelayMilliseconds);
         }
 
         // TODO should we really wait for data?
